@@ -45,6 +45,7 @@ import io.parsingdata.metal.encoding.Encoding;
 public class TokenRef extends Token {
 
     private static final Token LOOKUP_FAILED = new Token("LOOKUP_FAILED", null) {
+
         @Override
         protected Optional<ParseState> parseImpl(final Environment environment) {
             return failure();
@@ -97,8 +98,8 @@ public class TokenRef extends Token {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), referenceName);
+    public int cachingHashCode() {
+        return Objects.hash(super.cachingHashCode(), referenceName);
     }
 
 }
