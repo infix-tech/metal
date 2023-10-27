@@ -85,10 +85,13 @@ class ImmutableObjectTest {
     @Timeout(value=500, unit = TimeUnit.MILLISECONDS)
     void performanceTest() {
         // This test would take way too much time without hash caching.
-        byte[] input = new byte[8*256];
-        Token deep = repn(
+        final int dataBlockCount = 32;
+        final int dataSize = 64;
+        final byte[] input = new byte[dataBlockCount*dataSize];
+        // This token contains recursive tokens to create large ParseGraphs.
+        final Token deep = repn(
             seq(
-                def("data", 256),
+                def("data", dataSize),
                 tie(
                     seq("token",
                         def("byte", 1),
@@ -97,19 +100,20 @@ class ImmutableObjectTest {
                     last(ref("data"))
                 )
             ),
-            con(input.length / 256)
+            con(dataBlockCount)
         );
-        Optional<ParseState> result = deep.parse(env(createFromByteStream(new InMemoryByteStream(input))));
+        final Optional<ParseState> result = deep.parse(env(createFromByteStream(new InMemoryByteStream(input))));
         assertTrue(result.isPresent());
 
         ImmutableList<ParseValue> allValues = Selection.getAllValues(result.get().order, x -> true);
-        assertThat(allValues.size, equalTo(2056L));
+        assertThat(allValues.size, equalTo(2080L));
 
         final Map<ParseValue, Value> values = new HashMap<>();
-        while (allValues != null) {
+        while (allValues != null && allValues.head != null) {
             values.put(allValues.head, allValues.head);
             allValues = allValues.tail;
         }
+        assertThat(values.size(), equalTo(2080));
     }
 
 }
