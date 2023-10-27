@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import io.parsingdata.metal.data.ImmutableList;
 import io.parsingdata.metal.data.ParseState;
@@ -30,6 +31,7 @@ import io.parsingdata.metal.expression.value.Value;
 import io.parsingdata.metal.token.Token;
 import io.parsingdata.metal.util.InMemoryByteStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 class ImmutableObjectTest {
 
@@ -80,9 +82,10 @@ class ImmutableObjectTest {
     }
 
     @Test
+    @Timeout(value=500, unit = TimeUnit.MILLISECONDS)
     void performanceTest() {
-        // This test would not even run without hash caching in ImmutableObject.
-        byte[] input = new byte[3*256];
+        // This test would take way too much time without hash caching.
+        byte[] input = new byte[8*256];
         Token deep = repn(
             seq(
                 def("data", 256),
@@ -100,7 +103,7 @@ class ImmutableObjectTest {
         assertTrue(result.isPresent());
 
         ImmutableList<ParseValue> allValues = Selection.getAllValues(result.get().order, x -> true);
-        assertThat(allValues.size, equalTo(771L));
+        assertThat(allValues.size, equalTo(2056L));
 
         final Map<ParseValue, Value> values = new HashMap<>();
         while (allValues != null) {
