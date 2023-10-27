@@ -10,14 +10,11 @@ public abstract class ImmutableObject {
 
     private Integer hash;
 
-    abstract public String toString();
-
-    abstract public boolean equals(final Object obj);
-
     abstract public int cachingHashCode();
 
     @Override
     public int hashCode() {
+//        return cachingHashCode();
         if (hash == null) {
             hash = cachingHashCode();
         }
