@@ -16,6 +16,8 @@
 
 package io.parsingdata.metal.expression.value;
 
+import static java.math.BigInteger.ZERO;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,6 +47,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.parsingdata.metal.data.ImmutableList;
 import io.parsingdata.metal.data.ParseState;
 import io.parsingdata.metal.token.Token;
 
@@ -99,7 +102,7 @@ public class ScopeTest {
                     EMPTY),
                 tie("dx", def("dx_", con(1)), scope(ref("S.a.A.data.data"), con(0))));
         final Optional<ParseState> result = S2.parse(env(stream(0, 0, 0, 0, 0), enc()));
-        assertEquals(5L, ref("dx_").eval(result.get(), enc()).size);
+        assertEquals(5L, ref("dx_").eval(result.get(), enc()).size());
     }
 
     @Test

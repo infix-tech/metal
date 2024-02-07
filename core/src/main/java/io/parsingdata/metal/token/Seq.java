@@ -16,18 +16,13 @@
 
 package io.parsingdata.metal.token;
 
-import static io.parsingdata.metal.Trampoline.complete;
-import static io.parsingdata.metal.Trampoline.intermediate;
 import static io.parsingdata.metal.Util.checkContainsNoNulls;
 import static io.parsingdata.metal.Util.checkNotNull;
-import static io.parsingdata.metal.Util.success;
 import static io.parsingdata.metal.data.ImmutableList.create;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import io.parsingdata.metal.Trampoline;
-import io.parsingdata.metal.Util;
 import io.parsingdata.metal.data.Environment;
 import io.parsingdata.metal.data.ImmutableList;
 import io.parsingdata.metal.data.ParseState;
@@ -47,23 +42,21 @@ public class Seq extends CycleToken {
     public Seq(final String name, final Encoding encoding, final Token token1, final Token token2, final Token... additionalTokens) {
         super(name, encoding);
         this.tokens = create(checkContainsNoNulls(additionalTokens, "additionalTokens"))
-            .add(checkNotNull(token2, "token2"))
-            .add(checkNotNull(token1, "token1"));
+            .addHead(checkNotNull(token2, "token2"))
+            .addHead(checkNotNull(token1, "token1"));
     }
 
     @Override
     protected Optional<ParseState> parseImpl(final Environment environment) {
-        return iterate(environment.addBranch(this), tokens).computeResult();
+        return iterate(environment.addBranch(this), tokens);
     }
 
-    private Trampoline<Optional<ParseState>> iterate(final Environment environment, final ImmutableList<Token> list) {
-        if (list.isEmpty()) {
-            return complete(() -> success(environment.parseState.closeBranch(this)));
-        }
-        return list.head
-            .parse(environment)
-            .map(nextParseState -> intermediate(() -> iterate(environment.withParseState(nextParseState), list.tail)))
-            .orElseGet(() -> complete(Util::failure));
+    private Optional<ParseState> iterate(final Environment environment, final ImmutableList<Token> list) {
+        return list.stream()
+            .reduce(Optional.of(environment.parseState),
+                (parseState, token) -> parseState.flatMap(nextParseState -> token.parse(environment.withParseState(nextParseState))),
+                (never, happens) -> { throw new UnsupportedOperationException("Parallel processing of streams is not implemented."); })
+            .map(ps -> ps.closeBranch(this));
     }
 
     @Override

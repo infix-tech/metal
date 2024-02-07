@@ -77,6 +77,7 @@ import io.parsingdata.metal.data.ConstantSource;
 import io.parsingdata.metal.data.DataExpressionSource;
 import io.parsingdata.metal.data.Environment;
 import io.parsingdata.metal.data.ImmutableList;
+import io.parsingdata.metal.data.ImmutableList.ReversedImmutableList;
 import io.parsingdata.metal.data.ImmutablePair;
 import io.parsingdata.metal.data.ParseGraph;
 import io.parsingdata.metal.data.ParseItem;
@@ -168,7 +169,7 @@ public class AutoEqualityTest {
         io.parsingdata.metal.expression.logical.Not.class,
         // Data structures
         CoreValue.class, ParseValue.class, ParseReference.class, ParseState.class,
-        NotAValue.class, ParseGraph.class, ImmutableList.class,
+        NotAValue.class, ParseGraph.class, ImmutableList.class, ReversedImmutableList.class,
         ParseValueCache.class,
         // Inputs
         Slice.class,
@@ -220,7 +221,8 @@ public class AutoEqualityTest {
     private static final List<Supplier<Object>> BIG_INTEGERS = List.of(() -> ONE, () -> BigInteger.valueOf(3));
     private static final List<Supplier<Object>> PARSE_STATES = List.of(() -> createFromByteStream(DUMMY_STREAM), () -> createFromByteStream(DUMMY_STREAM, ONE), () -> new ParseState(GRAPH_WITH_REFERENCE, NO_CACHE, DUMMY_BYTE_STREAM_SOURCE, TEN, new ImmutableList<>(), new ImmutableList<>(), 0));
     private static final List<Supplier<Object>> PARSE_VALUE_CACHES = List.of(() -> NO_CACHE, () -> new ParseValueCache(), () -> new ParseValueCache().add(PARSE_VALUE), () -> new ParseValueCache().add(PARSE_VALUE).add(PARSE_VALUE));
-    private static final List<Supplier<Object>> IMMUTABLE_LISTS = List.of(ImmutableList::new, () -> ImmutableList.create("TEST"), () -> ImmutableList.create(1), () -> ImmutableList.create(1).add(2));
+    private static final List<Supplier<Object>> IMMUTABLE_LISTS = List.of(ImmutableList::new, () -> ImmutableList.create("TEST"), () -> ImmutableList.create(1), () -> ImmutableList.create(1).addHead(2), () -> ImmutableList.create(2).addHead(1).reverse());
+    private static final List<Supplier<Object>> LISTS = List.of(List::of, () -> List.of("TEST"), () -> List.of(1), () -> List.of(1,  2), () -> new ImmutableList<>(List.of(1, 2)), () -> new ImmutableList<>(List.of(2, 1)).reverse());
     private static final List<Supplier<Object>> BOOLEANS = List.of(() -> true, () -> false);
     private static final List<Supplier<Object>> BIPREDICATES = List.of(() -> (BiPredicate<Object, Object>) (o, o2) -> false);
     private static final Map<Class<?>, List<Supplier<Object>>> mapping = buildMap();
@@ -252,6 +254,7 @@ public class AutoEqualityTest {
         result.put(ImmutableList.class, IMMUTABLE_LISTS);
         result.put(boolean.class, BOOLEANS);
         result.put(BiPredicate.class, BIPREDICATES);
+        result.put(List.class, LISTS);
         return result;
     }
 

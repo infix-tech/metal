@@ -67,7 +67,7 @@ public abstract class Ref<T> extends ImmutableObject implements ValueExpression 
         this.scope = scope;
         this.limit = limit;
         this.references = create(checkContainsNoNulls(references, "references"))
-            .add(checkNotNull(reference, "reference"));
+            .addHead(checkNotNull(reference, "reference"));
     }
 
     private Ref(final BiPredicate<ParseValue, T> predicate, final SingleValueExpression scope, final SingleValueExpression limit, final ImmutableList<T> references) {
@@ -86,9 +86,9 @@ public abstract class Ref<T> extends ImmutableObject implements ValueExpression 
         @Override
         protected ImmutableList<Value> evalImpl(final ParseState parseState, final int limit, final int requestedScope) {
             return Optional.of(parseState.cache)
-                .filter(p -> references.size == 1)
+                .filter(p -> references.size() == 1)
                 .filter(p -> requestedScope == parseState.scopeDepth)
-                .flatMap(p -> p.find(references.head, limit))
+                .flatMap(p -> p.find(references.head(), limit))
                 .orElseGet(() -> super.evalImpl(parseState, limit, requestedScope));
         }
 
@@ -141,8 +141,8 @@ public abstract class Ref<T> extends ImmutableObject implements ValueExpression 
         final List<T> flatten = new ArrayList<>();
         ImmutableList<T> tail = allValues;
         while (!tail.isEmpty()) {
-            flatten.add(tail.head);
-            tail = tail.tail;
+            flatten.add(tail.head());
+            tail = tail.tail();
         }
         return flatten;
     }
@@ -151,7 +151,7 @@ public abstract class Ref<T> extends ImmutableObject implements ValueExpression 
         if (input.isEmpty()) {
             return complete(() -> output);
         }
-        return intermediate(() -> wrap(input.tail, output.add(input.head)));
+        return intermediate(() -> wrap(input.tail(), output.addHead(input.head())));
     }
 
     @Override

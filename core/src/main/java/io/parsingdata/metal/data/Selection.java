@@ -21,6 +21,7 @@ import static io.parsingdata.metal.Trampoline.intermediate;
 import static io.parsingdata.metal.Util.checkNotNull;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -39,7 +40,7 @@ public final class Selection {
         if (items.isEmpty()) {
             return complete(Optional::empty);
         }
-        final ParseItem head = items.head;
+        final ParseItem head = items.head();
         if (head.isValue() && matchesLocation(head.asValue(), offset, source)) {
             return complete(() -> Optional.of(head));
         }
@@ -49,7 +50,7 @@ public final class Selection {
                 return complete(() -> Optional.of(head));
             }
         }
-        return intermediate(() -> findItemAtOffset(items.tail, offset, source));
+        return intermediate(() -> findItemAtOffset(items.tail(), offset, source));
     }
 
     private static boolean matchesLocation(final ParseValue value, final BigInteger offset, final Source source) {
@@ -60,11 +61,11 @@ public final class Selection {
         if (graphList.isEmpty()) {
             return complete(() -> lowest);
         }
-        final ParseGraph graph = graphList.head;
+        final ParseGraph graph = graphList.head();
         if (graph.isEmpty() || !graph.getDefinition().isLocal()) {
-            return intermediate(() -> getLowestOffsetValue(graphList.tail, lowest));
+            return intermediate(() -> getLowestOffsetValue(graphList.tail(), lowest));
         }
-        return intermediate(() -> getLowestOffsetValue(addIfGraph(graphList.tail.add(graph.tail), graph.head),
+        return intermediate(() -> getLowestOffsetValue(addIfGraph(graphList.tail().addHead(graph.tail), graph.head),
                                                        compareIfValue(lowest, graph.head)));
     }
 
@@ -77,7 +78,7 @@ public final class Selection {
     }
 
     private static ImmutableList<ParseGraph> addIfGraph(final ImmutableList<ParseGraph> graphList, final ParseItem head) {
-        return head.isGraph() ? graphList.add(head.asGraph()) : graphList;
+        return head.isGraph() ? graphList.addHead(head.asGraph()) : graphList;
     }
 
     public static ImmutableList<ParseValue> getAllValues(final ParseGraph graph, final Predicate<ParseValue> predicate, final int limit) {
@@ -103,14 +104,14 @@ public final class Selection {
     }
 
     private static Trampoline<ImmutableList<ParseValue>> getAllValues(final ImmutableList<ParseGraph> graphList, final ImmutableList<ParseValue> valueList, final Predicate<ParseValue> predicate, final int limit) {
-        if (graphList.isEmpty() || valueList.size == limit) {
+        if (graphList.isEmpty() || (long) valueList.size() == limit) {
             return complete(() -> valueList);
         }
-        final ParseGraph graph = graphList.head;
+        final ParseGraph graph = graphList.head();
         if (graph.isEmpty()) {
-            return intermediate(() -> getAllValues(graphList.tail, valueList, predicate, limit));
+            return intermediate(() -> getAllValues(graphList.tail(), valueList, predicate, limit));
         }
-        return intermediate(() -> getAllValues(addIfGraph(graphList.tail.add(graph.tail), graph.head),
+        return intermediate(() -> getAllValues(addIfGraph(graphList.tail().addHead(graph.tail), graph.head),
                                                addIfMatchingValue(valueList, graph.head, predicate),
                                                predicate,
                                                limit));
@@ -118,23 +119,21 @@ public final class Selection {
 
     private static ImmutableList<ParseValue> addIfMatchingValue(final ImmutableList<ParseValue> valueList, final ParseItem item, final Predicate<ParseValue> predicate) {
         if (item.isValue() && predicate.test(item.asValue())) {
-            return valueList.add(item.asValue());
+            return valueList.addHead(item.asValue());
         }
         return valueList;
     }
 
+    /**
+     * Reverses an immutable list without modifying it.
+     * @param list the list to reverse
+     * @return the reverted list
+     * @param <T> the type of the values in the list
+     * @deprecated Use {@link ImmutableList#reverse()} instead.
+     */
+    @Deprecated(since = "11.0.0")
     public static <T> ImmutableList<T> reverse(final ImmutableList<T> list) {
-        if (list.isEmpty()) {
-            return list;
-        }
-        return reverse(list.tail, ImmutableList.create(list.head)).computeResult();
-    }
-
-    private static <T> Trampoline<ImmutableList<T>> reverse(final ImmutableList<T> oldList, final ImmutableList<T> newList) {
-        if (oldList.isEmpty()) {
-            return complete(() -> newList);
-        }
-        return intermediate(() -> reverse(oldList.tail, newList.add(oldList.head)));
+        return list.reverse();
     }
 
     public static ImmutableList<ParseItem> getAllRoots(final ParseGraph graph, final Token definition) {
@@ -145,17 +144,17 @@ public final class Selection {
         if (backlog.isEmpty()) {
             return complete(() -> rootList);
         }
-        final ParseItem item = backlog.head.item;
-        final ParseGraph parent = backlog.head.parent;
-        final ImmutableList<ParseItem> nextResult = item.getDefinition().equals(definition) && (parent == null || !parent.getDefinition().equals(definition)) ? rootList.add(item) : rootList;
+        final ParseItem item = backlog.head().item;
+        final ParseGraph parent = backlog.head().parent;
+        final ImmutableList<ParseItem> nextResult = item.getDefinition().equals(definition) && (parent == null || !parent.getDefinition().equals(definition)) ? rootList.addHead(item) : rootList;
         if (item.isGraph() && !item.asGraph().isEmpty()) {
             final ParseGraph itemGraph = item.asGraph();
-            return intermediate(() -> getAllRootsRecursive(backlog.tail.add(new Pair(itemGraph.head, itemGraph))
-                                                                       .add(new Pair(itemGraph.tail, itemGraph)),
+            return intermediate(() -> getAllRootsRecursive(backlog.tail().addHead(new Pair(itemGraph.head, itemGraph))
+                                                                       .addHead(new Pair(itemGraph.tail, itemGraph)),
                                                            definition,
                                                            nextResult));
         }
-        return intermediate(() -> getAllRootsRecursive(backlog.tail, definition, nextResult));
+        return intermediate(() -> getAllRootsRecursive(backlog.tail(), definition, nextResult));
     }
 
     static class Pair {
