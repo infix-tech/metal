@@ -1,5 +1,6 @@
 /*
- * Copyright 2013-2021 Netherlands Forensic Institute
+ * Copyright 2013-2024 Netherlands Forensic Institute
+ * Copyright 2021-2024 Infix Technologies B.V.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
+import io.parsingdata.metal.encoding.Encoding;
 import io.parsingdata.metal.expression.value.CoreValue;
 import io.parsingdata.metal.expression.value.Value;
 import org.junit.jupiter.api.BeforeAll;
